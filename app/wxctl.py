@@ -8,14 +8,21 @@
 @Software: PyCharm
 """
 
-from flask import Blueprint
+from flask import Blueprint, request, abort
 
-from . import app
+from .wxtool import wx_signature
+from .wxmsg import msg_handle
 
-bp = Blueprint('wx', __name__, url_prefix='/wx')
+bp = Blueprint('wxctl', __name__, url_prefix='/wx')
 
 
-@app.route("/", methods=['GET', 'POST'])
+@bp.route("/", methods=['GET', 'POST'])
+@wx_signature
 def wx():
-
-    return 'succ'
+    if request.method == 'GET':
+        echostr = request.args.get('echostr', '')
+        return echostr
+    elif request.method == 'POST':
+        return msg_handle(request.data)
+    else:
+        abort(400)
