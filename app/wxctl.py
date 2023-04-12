@@ -8,7 +8,7 @@
 @Software: PyCharm
 """
 
-from flask import Blueprint, request, abort
+from flask import Blueprint, request, abort, Response
 
 from .wxtool import wx_signature
 from .wxmsg import msg_handle
@@ -23,6 +23,7 @@ def wx():
         echostr = request.args.get('echostr', '')
         return echostr
     elif request.method == 'POST':
-        return msg_handle(request.data)
+        xml_ret = msg_handle(request.data)
+        return Response(xml_ret, content_type="application/xml")
     else:
         abort(400)

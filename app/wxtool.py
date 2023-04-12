@@ -9,7 +9,7 @@
 """
 from functools import wraps
 
-from flask import request, abort
+from flask import request, abort, g
 from wechatpy.exceptions import InvalidSignatureException
 from wechatpy.utils import check_signature
 
@@ -32,3 +32,12 @@ def wx_signature(func):
         return func(*args, **kwargs)
 
     return decorated_function
+
+
+def get_user_id():
+    return g.user_id
+
+
+def set_user_id(user_id):
+    g.user_id = user_id
+
