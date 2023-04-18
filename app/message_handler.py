@@ -26,10 +26,11 @@ class TextMessageHandler(MessageHandler):
     def handle_message(self, msg):
         if self.is_command(msg.content):
             # 如果是命令类型，则创建相应的命令处理器实例并调用其 handle_command() 方法进行处理
-            command_type = msg.content.split('/')[1]
+            command_type = msg.content.split()[0].split('/')[1]
             handler = wx_commands.create_handler(command_type)
             if handler:
-                reply_xml = handler.handle_command(msg.content)
+                reply = handler.handle_command(msg.content)
+                reply_xml = TextReply(content=reply, message=msg).render()
                 return reply_xml
             else:
                 # 如果是未知命令，则返回错误消息

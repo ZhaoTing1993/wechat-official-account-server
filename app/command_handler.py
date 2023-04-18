@@ -32,11 +32,13 @@ class CommandCHandler(CommandHandler):
         # 处理 /c 命令
         pass
 
+
 class StockCommandHandler(CommandHandler):
     def handle_command(self, cmd):
         """
             解析用户输入的命令，并执行相应的操作
             """
+        print("进入股票处理器")
         # 将命令按空格分割
         parts = cmd.split()
 
@@ -58,7 +60,8 @@ class StockCommandHandler(CommandHandler):
         # 根据操作类型执行相应的操作
         if op_type in operations:
             operation = operations[op_type]
-            return operation(*op_args)
+            ret = operation(*op_args)
+            return ret  # "完成"
         else:
             return "无效操作，请输入 s、a、d 或 q"
 

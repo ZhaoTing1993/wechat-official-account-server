@@ -18,10 +18,12 @@ from wechatpy.replies import TextReply
 #     reply = TextReply(content='text reply\ntest', message=msg)
 #     xml = reply.render()
 #     return xml
+from app.wxtool import set_user_id
 
 
 def msg_handle(data):
     msg = parse_message(data)
+    set_user_id(msg.source)
     print(msg)
 
     # 根据消息类型创建对应的消息处理类实例

@@ -40,4 +40,11 @@ def get_pricereport(stock_df):
 
 
 if __name__ == '__main__':
-    get_pricereport(stock_df)
+    # get_pricereport(stock_df)
+    ret = ""
+    report_data = get_pricereport(stock_df)
+    row_count = report_data.shape[0]
+    for i in range(row_count):
+        ret += "------------\n"
+        ret += f"Code: {report_data.iloc[i]['code']}\nPrice: {report_data.iloc[i]['price']}\nCost: {report_data.iloc[i]['cost']}\nVolume: {report_data.iloc[i]['vol']}\nProfit: {report_data.iloc[i]['prof']}\nProfit Percentage: {report_data.iloc[i]['prof_percent']}\n"
+    print(ret)

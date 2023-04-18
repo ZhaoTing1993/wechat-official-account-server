@@ -7,34 +7,24 @@
 @File: db_config.py
 @Software: PyCharm
 """
-import databases
-import sqlalchemy
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from app import app
 
-# 根据所选数据库的不同，可能需要使用不同的Python库来进行连接。如果选择使用MySQL，则需要使用pymysql库；如果选择使用SQLite，则需要使用sqlite3库。
-# "sqlite:///example.db"
-# "mysql+pymysql://user:password@server:port/dbname"
-# "postgresql://user:password@localhost/dbname"
 
-DATABASE_URL = "sqlite:///example.db"
+db_host = app.config.get("DB_HOST", "localhost")
+db_port = app.config.get("DB_PORT", "3306")
+db_user = app.config.get("DB_USER", "admin")
+db_password = app.config.get("DB_PASSWORD", "admin")
+db_name = app.config.get("DB_NAME", "flask_demo")
+db_charset = app.config.get("DB_CHARSET", "utf8mb4")
+
+
+DATABASE_URL = f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}?charset={db_charset}"
 
 # 创建数据库连接引擎
-engine = sqlalchemy.create_engine(
-    DATABASE_URL, pool_size=10, max_overflow=20, pool_recycle=300
-)
+engine = create_engine(DATABASE_URL, pool_recycle=3600,
+                       pool_size=10)
 
-# 创建数据库连接实例
-my_db = databases.Database(DATABASE_URL, force_rollback=False)
-
-
-async def connect_to_database():
-    """
-    连接数据库并创建连接池，并在应用启动时调用此函数。
-    """
-    await my_db.connect()
-
-
-async def close_database_connection():
-    """
-    关闭数据库连接，并在应用结束时调用此函数。
-    """
-    await my_db.disconnect()
+# 创建Session工厂类
+Session = sessionmaker(bind=engine)

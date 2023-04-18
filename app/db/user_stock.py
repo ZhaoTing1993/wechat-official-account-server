@@ -7,176 +7,91 @@
 @File: user_stock.py
 @Software: PyCharm
 """
-import datetime
-from decimal import Decimal
+from datetime import datetime
 
-import sqlalchemy
+from sqlalchemy import Column, Integer, String, DateTime, Numeric, MetaData
+from sqlalchemy.ext.declarative import declarative_base
+from app.db.db_config import Session, engine
 
-from app.db.db_config import my_db
+# 创建Base对象
 
-
-def singleton(cls):
-    instances = {}
-
-    def get_instance():
-        if cls not in instances:
-            instances[cls] = cls()
-        return instances[cls]
-
-    return get_instance
+Base = declarative_base()
 
 
-@singleton
-class UserStock:
-    def __init__(self):
-        # 定义用户股票表(user_stock)模型
-        self.user_stock = sqlalchemy.Table(
-            "user_stock",
-            sqlalchemy.MetaData(),
-            sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
-            sqlalchemy.Column("user", sqlalchemy.String),
-            sqlalchemy.Column("code", sqlalchemy.Integer),
-            sqlalchemy.Column("cost", sqlalchemy.Numeric),
-            sqlalchemy.Column("volume", sqlalchemy.Integer),
-            sqlalchemy.Column("create_time", sqlalchemy.DateTime),
-            sqlalchemy.Column("update_time", sqlalchemy.DateTime),
+# 定义UserStock对象
+class UserStock(Base):
+    __tablename__ = 'user_stock'
 
-            sqlalchemy.UniqueConstraint("user", "code")
-        )
-
-        self.database = my_db
-
-    def create_table(self):
-        """
-        创建用户股票表。
-        """
-        with self.database.engine.begin() as conn:
-            if not conn.run_sync(self.user_stock.exists):
-                conn.run_sync(self.user_stock.create)
-
-    def get_user_stock(self, **filters):
-        """
-        查询符合过滤条件的用户股票记录。
-        """
-        query = self.user_stock.select()
-
-        for key, value in filters.items():
-            if hasattr(self.user_stock.c, key):
-                column = getattr(self.user_stock.c, key)
-                query = query.where(column == value)
-
-        row = self.database.fetch_one(query)
-
-        if not row:
-            return None
-
-        return dict(row)
-
-    def insert_user_stock(self, user, code, **kwargs):
-        """
-        插入一条新的用户股票记录，
-        只有表格中user和code为联合唯一，只有user和code不存在时可以插入。
-        """
-        # 检查 user 和 code 是否存在于数据库中
-        record = self.get_user_stock(user=user, code=code)
-        if record:
-            raise ValueError(f"用户 {user} 已经存在股票 {code} 的持仓记录")
-
-        now = datetime.datetime.now()
-
-        values = {
-            "user": user,
-            "code": code,
-            "create_time": now,
-            "update_time": now,
-        }
-
-        values.update({k: Decimal(v) for k, v in kwargs.items() if k == "cost"})
-        values.update({k: int(v) for k, v in kwargs.items() if k == "volume"})
-
-        query = (
-            self.user_stock.insert()
-                .values(**values)
-                .returning(self.user_stock)
-        )
-
-        row = self.database.fetch_one(query)
-        return dict(row)
-
-    def select_user_stock(self, user, **filters):
-        """
-        查询指定用户符合过滤条件的所有股票记录。
-        """
-        query = self.user_stock.select().where(self.user_stock.c.user == user)
-
-        for key, value in filters.items():
-            if hasattr(self.user_stock.c, key):
-                column = getattr(self.user_stock.c, key)
-                query = query.where(column == value)
-
-        rows = self.database.fetch_all(query)
-
-        return [dict(row) for row in rows]
-
-    def update_user_stock(self, id_, user=None, code=None, cost=None, volume=None):
-        """
-        更新指定ID的股票记录。
-        """
-        query = (
-            self.user_stock.update()
-                .where(self.user_stock.c.id == id_)
-                .values(
-                {
-                    "user": user,
-                    "code": code,
-                    "cost": Decimal(cost) if cost is not None else None,
-                    "volume": volume,
-                    "update_time": datetime.datetime.now(),
-                }
-            )
-                .returning(self.user_stock)
-        )
-
-        row = self.database.fetch_one(query)
-
-        return dict(row)
-
-    def delete_user_stock(self, id_):
-        """
-        删除指定ID的股票记录。
-        """
-        query = self.user_stock.delete().where(self.user_stock.c.id == id_)
-        self.database.execute(query)
-
-    def delete_user_stock_by_user_code(self, user: str, code: int):
-        query = self.user_stock.delete().where(
-            sqlalchemy.and_(
-                self.user_stock.c.user == user,
-                self.user_stock.c.code == code
-            )
-        )
-        self.database.execute(query)
+    id = Column(Integer, primary_key=True)
+    user = Column(String(255), nullable=False)
+    code = Column(Integer, nullable=False)
+    price = Column(Numeric(precision=20, scale=2), nullable=False)
+    cost = Column(Numeric(precision=20, scale=2), nullable=False)
+    volume = Column(Integer, nullable=False)
+    create_time = Column(DateTime, nullable=False, default=datetime.now)
+    update_time = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
 
 
-def example():
-    user_stock = UserStock()
+# 创建用户股票表
+def create_user_stock_table():
+    # 获取元数据对象
+    metadata = MetaData()
 
-    # 创建用户股票表
-    user_stock.create_table()
+    # 如果表已存在则不创建
+    if metadata.tables.get('user_stock') is not None:
+        return
 
-    # 插入新的用户股票记录
-    row = user_stock.insert_user_stock("test", 1234, 12.34, 123.4, 100)
-    print(row)
+    # 创建表
+    Base.metadata.create_all(engine)
 
-    # 查询指定用户的所有股票记录
-    filter = {'code': 600001}
-    rows = user_stock.select_user_stock("test", filter)
-    print(rows)
 
-    # 更新指定ID的股票记录
-    row = user_stock.update_user_stock(1, cost=23.45, volume=200)
-    print(row)
+# 查询所有记录
+def query_all():
+    session = Session()
+    stocks = session.query(UserStock).all()
+    session.close()
+    return stocks
 
-    # 删除指定ID的股票记录
-    user_stock.delete_user_stock(1)
-    user_stock.delete_user_stock_by_user_code("test", 600001)
+
+# 根据条件查询记录
+def query(user, code=None):
+    session = Session()
+    if code:
+        stocks = session.query(UserStock).filter(UserStock.user == user, UserStock.code == code).all()
+    else:
+        stocks = session.query(UserStock).filter(UserStock.user == user).all()
+    session.close()
+    return stocks
+
+
+# 新增一条记录
+def add(user, code, price=0, cost=0, volume=0):
+    session = Session()
+    new_stock = UserStock(user=user, code=code, price=price, cost=cost, volume=volume)
+    session.add(new_stock)
+    session.commit()
+    session.close()
+
+
+# 更新一条记录
+def update(user, code, volume=None, price=None, cost=None):
+    session = Session()
+    stock = session.query(UserStock).filter_by(user=user, code=code).first()
+    if volume is not None:
+        stock.volume = volume
+    if price is not None:
+        stock.price = price
+    if cost is not None:
+        stock.cost = cost
+    stock.update_time = datetime.now()
+    session.commit()
+    session.close()
+
+
+# 删除一条记录
+def delete(user, code):
+    session = Session()
+    stock = session.query(UserStock).filter_by(user=user, code=code).first()
+    session.delete(stock)
+    session.commit()
+    session.close()

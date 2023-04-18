@@ -10,6 +10,7 @@
 
 from flask import Blueprint, request, abort, Response
 
+from .wx_send import send_text_message
 from .wxtool import wx_signature
 from .wxmsg import msg_handle
 
@@ -27,3 +28,11 @@ def wx():
         return Response(xml_ret, content_type="application/xml")
     else:
         abort(400)
+
+
+@bp.route("/send", methods=['GET', 'POST'])
+@wx_signature
+def send():
+    if request.method == 'GET':
+        text = request.args.get('text', '')
+        send_text_message('oP1qd6SekcTdG5lOOf_zYO9Wyo8g', text)
