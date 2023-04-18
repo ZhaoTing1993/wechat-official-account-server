@@ -9,7 +9,7 @@
 """
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, DateTime, Numeric, MetaData
+from sqlalchemy import Column, Integer, String, DateTime, Numeric, MetaData, Index
 from sqlalchemy.ext.declarative import declarative_base
 from app.db.db_config import Session, engine
 
@@ -24,12 +24,14 @@ class UserStock(Base):
 
     id = Column(Integer, primary_key=True)
     user = Column(String(255), nullable=False)
-    code = Column(Integer, nullable=False)
+    code = Column(String(10), nullable=False)
     price = Column(Numeric(precision=20, scale=2), nullable=False)
     cost = Column(Numeric(precision=20, scale=2), nullable=False)
     volume = Column(Integer, nullable=False)
     create_time = Column(DateTime, nullable=False, default=datetime.now)
     update_time = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+
+    __table_args__ = (Index('idx_user_code', user, code, unique=True),)
 
 
 # 创建用户股票表

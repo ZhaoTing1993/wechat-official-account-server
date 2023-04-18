@@ -16,14 +16,14 @@ import pandas as pd
 def subscribe_stock(code, cost=0, volume=0):
     # 将股票代码加入订阅列表，add user_stock 表
     print("subscribe:{} {} {} {}".format(get_user_id(), code, cost, volume))
-    user_stock.add(get_user_id(), code, cost, volume)
+    user_stock.add(get_user_id(), code, cost=cost, volume=volume)
     return "{}订阅成功".format(code)
 
 
 def add_position(code, cost, volume):
     # 将持仓添加到 user_stock 表
     user_stock.update(get_user_id(), code, cost, volume)
-    return "{}持仓更新成功 \n当前成本{} \n持股数{}".format(code, cost, volume)
+    return "{}持仓更新成功 \n当前成本{} \n持股数{}".format(code, cost=cost, volume=volume)
 
 
 def delete_position(code):
